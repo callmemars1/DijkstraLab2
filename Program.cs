@@ -1,11 +1,31 @@
 ﻿using MetroPathFinded;
 
-
+IEnumerable<Station> stations;
+IEnumerable<Tuple<Station, Station, int>> routes;
 var provider = new SQLiteMetroDataProvider("MetroRoutes.sqlite");
 provider.Open();
-var stations = provider.GetStations();
-var routes = provider.GetRoutes();
+while (true)
+{
+    try
+    {
+        Console.WriteLine("Введите город: ");
+        var city = Console.ReadLine();
+        Console.WriteLine(city);
+        stations = provider.GetStations(city);
+        routes = provider.GetRoutes(city);
+        break;
+    }
+    catch (ArgumentException e)
+    {
+        Console.WriteLine(e.Message);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine("Ошибка ввода!" + ex.Message);
+    }
+}
 provider.Cloes();
+
 
 var graph = new int[stations.Count(), stations.Count()];
 
@@ -31,7 +51,7 @@ while (true)
         id1 = Convert.ToInt32(Console.ReadLine());
         Console.WriteLine($"First station is {stations.ElementAt(id1)}");
         id2 = Convert.ToInt32(Console.ReadLine());
-        Console.WriteLine($"First station is {stations.ElementAt(id2)}");
+        Console.WriteLine($"Second station is {stations.ElementAt(id2)}");
         path = Dijkstra.GetShortestPath(graph, id1, id2);
     }
     catch (Exception ex)

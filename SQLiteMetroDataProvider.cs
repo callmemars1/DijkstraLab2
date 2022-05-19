@@ -8,7 +8,6 @@ public class SQLiteMetroDataProvider : IMetroDataProvider
     public SQLiteMetroDataProvider(string path)
     {
         _connection = new SqliteConnection($"Data Source={path};Mode=ReadOnly;");
-        
     }
     public void Open() 
     {
@@ -18,10 +17,34 @@ public class SQLiteMetroDataProvider : IMetroDataProvider
     {
         _connection.Close();
     }
-    public IEnumerable<Line> GetLines()
+
+    private long? GetCityId(string city) 
     {
+        string sqlQuery = "SELECT c.id FROM cities c "
+                        + $"WHERE c.city_name = '{city}'";
+        SqliteCommand cmd = _connection.CreateCommand();
+        cmd.CommandText = sqlQuery;
+        using (SqliteDataReader reader = cmd.ExecuteReader())
+        {
+            if (reader.HasRows) // если есть данные
+            {
+                if (reader.Read())
+                    return reader.GetInt32(0);
+                return null;
+            }
+            else return null;
+        }
+    }
+
+    public IEnumerable<Line> GetLines(string city)
+    {
+        var cityId = GetCityId(city);
+        if (cityId.HasValue == false)
+            throw new ArgumentException("Город не найден");
+
         string sqlQuery = "SELECT line_name, color, c.city_name FROM lines "
-                        + "LEFT JOIN cities c on lines.city_id_FK = c.id";
+                        + "LEFT JOIN cities c on lines.city_id_FK = c.id "
+                        + $"WHERE c.id = {cityId}";
         SqliteCommand cmd = _connection.CreateCommand();
         cmd.CommandText = sqlQuery;
         var lines = new List<Line>();
@@ -43,11 +66,19 @@ public class SQLiteMetroDataProvider : IMetroDataProvider
         return lines;
     }
 
-    public IEnumerable<Tuple<Station, Station, int>> GetRoutes()
+    public IEnumerable<Tuple<Station, Station, int>> GetRoutes(string city)
     {
+        var cityId = GetCityId(city);
+        if (cityId.HasValue == false)
+            throw new ArgumentException("Город не найден");
+
         string sqlQuery = "SELECT s1.name,s1.latitude,s1.longitude,s2.name,s2.latitude,s2.longitude,n.approximate_time FROM neighboring n "
                         + "LEFT JOIN stations s1 on s1.id = n.first_station_id_FK "
-                        + "LEFT JOIN stations s2 on s2.id = n.second_station_id_FK";
+                        + "LEFT JOIN stations s2 on s2.id = n.second_station_id_FK "
+                        + "LEFT JOIN lines l on s1.line_id_FK = l.id "
+                        + "LEFT JOIN cities c on l.city_id_FK = c.id "
+                        + $"WHERE c.id = {cityId}";
+
         SqliteCommand cmd = _connection.CreateCommand();
         cmd.CommandText = sqlQuery;
         var routes = new List<Tuple<Station, Station, int>>();
@@ -76,11 +107,16 @@ public class SQLiteMetroDataProvider : IMetroDataProvider
         return routes;
     }
 
-    public IEnumerable<Station> GetStations()
+    public IEnumerable<Station> GetStations(string city)
     {
+        var cityId = GetCityId(city);
+        if (cityId.HasValue == false)
+            throw new ArgumentException("Город не найден");
+
         string sqlQuery = "SELECT s.name, s.latitude, s.longitude, l.line_name, l.color, c.city_name FROM ( stations s "
-                        + "LEFT JOIN lines l on l.id = s.line_id_FK )"
-                        + "LEFT JOIN cities c on c.id = l.city_id_FK";
+                        + "LEFT JOIN lines l on l.id = s.line_id_FK ) "
+                        + "LEFT JOIN cities c on c.id = l.city_id_FK "
+                        +$"WHERE c.id = {cityId}";
         SqliteCommand cmd = _connection.CreateCommand();
         cmd.CommandText = sqlQuery;
         var stations = new List<Station>();
