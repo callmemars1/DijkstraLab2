@@ -23,12 +23,12 @@ public class Dijkstra
     /// <param name="destinationIndex">Точка, в которой заканчивается путь</param>
     /// <returns>Набор индексов точек, по которым можно кратчайшим образом попасть из sourceIndex в destinationIndex</returns>
     public static Path GetShortestPath(int[,] graph,
-                                            int sourceIndex,
-                                            int destinationIndex)
+                                       int sourceIndex,
+                                       int destinationIndex)
     {
         // Число всех вершин (точек)
         var vertexCount = graph.GetLength(0);
-
+        Console.WriteLine(vertexCount);
         // Массив, который содержит все возможные дистанции
         // из sourceIndex в любую другую точку
         var distances = new int[vertexCount];
@@ -62,6 +62,7 @@ public class Dijkstra
             shortestPathSet[closestVertex] = true;
 
 
+
             // Обновляем веса для точек, в которые можно попасть из найденной
             for (int vertex = 0; vertex < vertexCount; ++vertex)
                 // Обновляем вес для точки, только в том случае,
@@ -77,6 +78,7 @@ public class Dijkstra
             // Если мы нашли путь до нужной точки, то выходим из цикла
             if (closestVertex == destinationIndex)
                 break;
+
         }
 
         // Если нам не удалось найти путь, возвращаем пустой путь
@@ -121,15 +123,15 @@ public class Dijkstra
     private static Path CreatePath(int[] parent, int[,] graph, int destinationIndex)
     {
         // Если для пути нет родительской точки, возвращаем пустой путь
-        if (parent[destinationIndex] == -1)
+        /*if (parent[destinationIndex] == -1)
             return new Path();
-
+*/
         var solution = new Path();
         int i = destinationIndex;
         // проходим по всем родительским точкам для построения пути
         while (i != -1)
         {
-            solution.Add((i, graph[i,parent[i] != -1 ? parent[i] : i]));
+            solution.Add((i, graph[i, parent[i] != -1 ? parent[i] : i]));
             i = parent[i];
         }
         solution.Reverse(); // разворачиваем, чтобы восстановить порядок
